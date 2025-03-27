@@ -52,6 +52,8 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
+
+
       - name: Terraform Validate
         run: terraform validate
 
@@ -63,18 +65,26 @@ jobs:
 
       - name: Run OPA Security Scan
         run: |
+          # Use jq to parse the OPA output and check for violations
           VIOLATIONS=$(opa eval \
             --format json \
             -d tfplan.json \
             -d policies/terraform_security.rego \
-            "data.terraform.security.deny")
+            "data.terraform.security.deny" | \
+            jq '.result[0].expressions[0].value | length')
           
-          if [ "$VIOLATIONS" != "[]" ]; then
-            echo "Security violations detected:"
-            echo "$VIOLATIONS"
+          echo "Number of violations: $VIOLATIONS"
+          
+          if [ "$VIOLATIONS" -gt 0 ]; then
+            echo "Security violations detected!"
+            opa eval \
+              --format pretty \
+              -d tfplan.json \
+              -d policies/terraform_security.rego \
+              "data.terraform.security.deny"
             exit 1
           fi
 
       - name: Terraform Apply
-        if: success()  # Only runs if all previous steps (including OPA scan) pass
+        if: success()
         run: terraform apply -auto-approve tfplan
