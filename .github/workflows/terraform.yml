@@ -52,7 +52,7 @@ jobs:
           quiet: false # optional: display only failed checks
           soft_fail: false # optional: do not return an error code if there are failed checks
           framework: terraform
-          output: json
+          output_format: json
           
       # Apply Terraform Changes (if plan passes validation)
       - name: Apply Terraform Changes
