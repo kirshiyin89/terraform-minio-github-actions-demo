@@ -41,7 +41,6 @@ jobs:
         uses: bridgecrewio/checkov-action@master
         with:
          framework: terraform
-         file: tfplan.json
           
       # Apply Terraform Changes (if plan passes validation)
       - name: Apply Terraform Changes
