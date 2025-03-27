@@ -54,7 +54,7 @@ jobs:
       # Run Checkov on Terraform Plan (JSON)
       - name: Run Checkov on Terraform Plan
         id: checkov
-        run: checkov -d . || exit 1  # Force non-zero exit code if Checkov fails
+        run: checkov --enable-secret-scan-all-files || exit 1  # Force non-zero exit code if Checkov fails
 
       # Apply Terraform Changes (if plan passes validation)
       - name: Apply Terraform Changes
