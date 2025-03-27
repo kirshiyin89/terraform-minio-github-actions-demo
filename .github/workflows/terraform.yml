@@ -30,22 +30,18 @@ jobs:
       - name: Validate Terraform Syntax
         run: terraform validate
 
-      # Install Checkov (security validation for Terraform)
-      - name: Install Checkov
+      # Install jq (for Checkov security validation for Terraform)
+      - name: Install jq
         run: |
-          pip install checkov
-
-      # Run Checkov to validate Terraform code for security and policy issues
-     # - name: Run Checkov Terraform Scan
-      #  run: checkov -d . --skip-check CKV_AWS_23  # You can customize check skip as needed
+          pip install jq
 
       # Generate Terraform Plan (in binary format)
       - name: Generate Terraform Plan
-        run: terraform plan -out=tfplan
+        run: terraform plan --out tfplan.binary
 
       # Convert Plan to JSON format
       - name: Convert Terraform Plan to JSON
-        run: terraform show -json tfplan > plan.json
+        run: terraform show -json tfplan.binary | jq > plan.json
 
       - name: Run Checkov action
         id: checkov
