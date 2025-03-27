@@ -9,6 +9,7 @@ terraform {
 
 resource "docker_container" "minio" {
   name  = "minio"
+  image = "minio/minio"
   ports {
     internal = 9000
     external = 9000
