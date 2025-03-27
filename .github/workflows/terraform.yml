@@ -51,8 +51,8 @@ jobs:
           file: plan.json # optional: provide the path for resource to be scanned. This will override the directory if both are provided.
           quiet: false # optional: display only failed checks
           soft_fail: false # optional: do not return an error code if there are failed checks
-          framework: terraform
           output_format: json
+          repo_root_for_plan_enrichment: /
           
       # Apply Terraform Changes (if plan passes validation)
       - name: Apply Terraform Changes
