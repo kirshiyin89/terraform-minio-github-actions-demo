@@ -57,4 +57,4 @@ jobs:
       # Apply Terraform Changes (if plan passes validation)
       - name: Apply Terraform Changes
         if: success()  # Only runs if Checkov passed and returned success
-        run: terraform apply -auto-approve tfplan
+        run: terraform apply -auto-approve tfplan.binary
