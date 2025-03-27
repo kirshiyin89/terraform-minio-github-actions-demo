@@ -30,25 +30,18 @@ jobs:
       - name: Validate Terraform Syntax
         run: terraform validate
 
-      # Install jq (for Checkov security validation for Terraform)
-      - name: Install jq
-        run: |
-          pip install jq
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
 
-      # Generate Terraform Plan (in binary format)
-      - name: Generate Terraform Plan
-        run: terraform plan --out tfplan.binary
-
-      # Convert Plan to JSON format
-      - name: Convert Terraform Plan to JSON
-        run: terraform show -json tfplan.binary | jq > plan.json
+      - name: Terraform Show
+        run: terraform show -json tfplan > tfplan.json
 
       - name: Run Checkov action
         id: checkov
         uses: bridgecrewio/checkov-action@master
         with:
           directory: /
-          file: plan.json # optional: provide the path for resource to be scanned. This will override the directory if both are provided.
+          file: tfplan.json # optional: provide the path for resource to be scanned. This will override the directory if both are provided.
           quiet: false # optional: display only failed checks
           soft_fail: false # optional: do not return an error code if there are failed checks
           output_format: json
@@ -57,4 +50,4 @@ jobs:
       # Apply Terraform Changes (if plan passes validation)
       - name: Apply Terraform Changes
         if: success()  # Only runs if Checkov passed and returned success
-        run: terraform apply -auto-approve tfplan.binary
+        run: terraform apply -auto-approve tfplan
