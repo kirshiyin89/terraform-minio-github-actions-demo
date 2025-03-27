@@ -1,3 +1,3 @@
 checkov:
-  run_check: "CKV_DOCKER_5"
+  run_check: "--enable-secret-scan-all-files"
   output: json
