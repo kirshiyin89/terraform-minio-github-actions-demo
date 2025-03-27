@@ -36,13 +36,25 @@ jobs:
           pip install checkov
 
       # Run Checkov to validate Terraform code for security and policy issues
-      - name: Run Checkov Terraform Scan
-        run: checkov -d . --skip-check CKV_AWS_23  # You can customize check skip as needed
+     # - name: Run Checkov Terraform Scan
+      #  run: checkov -d . --skip-check CKV_AWS_23  # You can customize check skip as needed
 
       # Plan Terraform Changes
-      - name: Plan Terraform Changes
-        run: terraform plan
+      #- name: Plan Terraform Changes
+      #  run: terraform plan
 
-      # Apply Terraform Changes
+            # Generate Terraform Plan (in binary format)
+      - name: Generate Terraform Plan
+        run: terraform plan -out=tfplan
+
+      # Convert Plan to JSON format
+      - name: Convert Terraform Plan to JSON
+        run: terraform show -json tfplan > plan.json
+
+      # Run Checkov on Terraform Plan (JSON)
+      - name: Run Checkov on Terraform Plan
+        run: checkov -f plan.json --skip-check CKV_AWS_23  # Customize skipped checks as needed
+        
+      # Apply Terraform Changes (if plan passes validation)
       - name: Apply Terraform Changes
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve tfplan
