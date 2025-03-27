@@ -60,9 +60,6 @@ jobs:
           framework: terraform # optional: run only on a specific infrastructure {cloudformation,terraform,kubernetes,all}
           skip_cve_package: CVE_2019_8331 # optional: skip a specific CVE package in SCA scans, can be comma separated list
           download_external_modules: true # optional: download external terraform modules from public git repositories and terraform registry
-          log_level: DEBUG # optional: set log level. Default WARNING
-          baseline: cloudformation/.checkov.baseline # optional: Path to a generated baseline file. Will only report results not in the baseline.
-          use_enforcement_rules: true # optional - use enforcement rule configs from the platform
 
       # Apply Terraform Changes (if plan passes validation)
       - name: Apply Terraform Changes
