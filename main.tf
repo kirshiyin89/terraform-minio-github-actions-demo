@@ -2,14 +2,13 @@ terraform {
   required_providers {
     docker = {
       source = "kreuzwerker/docker"
-      version = "3.0.200"
+      version = "3.0.2"
     }
   }
 }
 
 resource "docker_container" "minio" {
   name  = "minio"
-  image = "minio/minio"
   ports {
     internal = 9000
     external = 9000
