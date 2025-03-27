@@ -9,19 +9,33 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download OPA
+      - name: Install OPA
         run: |
-          wget https://openbao.org/assets/opa/opa_linux_amd64 -O opa
+          curl -L -o opa https://github.com/open-policy-agent/opa/releases/download/v0.61.0/opa_linux_amd64
           chmod +x opa
           sudo mv opa /usr/local/bin/opa
+          opa version
 
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.7.5
 
+      - name: Create Simple Terraform File
+        run: |
+          cat > main.tf << EOL
+          resource "local_file" "example" {
+            filename = "sensitive_file.txt"
+            content  = "password=password123"
+            file_permission = "0666"
+          }
+          EOL
+
       - name: Terraform Init
         run: terraform init
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
 
       - name: Create OPA Policy
         run: |
@@ -40,17 +54,12 @@ jobs:
           }
           EOL
 
-      - name: Terraform Plan
-        run: terraform plan -out=tfplan
-
       - name: Terraform Show
         run: terraform show -json tfplan > tfplan.json
 
-      - name: Debug OPA Scan
+      - name: Run OPA Scan
         run: |
-          echo "Debugging tfplan.json contents:"
-          cat tfplan.json
-          echo "\n\nRunning OPA evaluation:"
+          echo "Scanning Terraform plan:"
           opa eval --format pretty \
             -d tfplan.json \
             -d policies/terraform_security.rego \
