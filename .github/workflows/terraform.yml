@@ -41,6 +41,7 @@ jobs:
         uses: bridgecrewio/checkov-action@master
         with:
          framework: terraform
+         quiet: false
           
       # Apply Terraform Changes (if plan passes validation)
       - name: Apply Terraform Changes
