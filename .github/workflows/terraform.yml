@@ -14,20 +14,62 @@ jobs:
           curl -L -o opa https://github.com/open-policy-agent/opa/releases/download/v0.61.0/opa_linux_amd64
           chmod +x opa
           sudo mv opa /usr/local/bin/opa
-          opa version
 
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.7.5
 
-      - name: Create Simple Terraform File
+      - name: Create Vulnerable Terraform File
         run: |
-          cat > main.tf << EOL
-          resource "local_file" "example" {
-            filename = "sensitive_file.txt"
-            content  = "password=password123"
-            file_permission = "0666"
+          cat > main.tf << 'EOL'
+          terraform {
+            required_providers {
+              local = {
+                source = "hashicorp/local"
+                version = "~> 2.4"
+              }
+            }
+          }
+
+          resource "local_file" "high_risk_file" {
+            filename = "secrets.txt"
+            content = <<-EOF
+            # DELIBERATE SECURITY RISKS
+            ADMIN_PASSWORD = "password123"
+            SECRET_KEY = "sk-very-dangerous-key"
+            DATABASE_CONNECTION = "postgres://admin:superunsafepassword@localhost"
+            EOF
+            file_permission = "0666"  # Extremely permissive
+          }
+          EOL
+
+      - name: Create Comprehensive OPA Policy
+        run: |
+          mkdir -p policies
+          cat > policies/terraform_security.rego << 'EOL'
+          package terraform.security
+
+          # Deny if file permissions are too open
+          deny[msg] {
+              some i
+              input.resource_changes[i].change.after.file_permission == "0666"
+              msg := sprintf("File %v has overly permissive permissions (0666)", 
+                  [input.resource_changes[i].change.after.filename])
+          }
+
+          # Deny if weak passwords are found
+          deny[msg] {
+              some i
+              contains(lower(input.resource_changes[i].change.after.content), "password123")
+              msg := "Weak password 'password123' detected"
+          }
+
+          # Deny if sensitive information is exposed
+          deny[msg] {
+              some i
+              contains(lower(input.resource_changes[i].change.after.content), "secret_key")
+              msg := "Potential secret key exposure detected"
           }
           EOL
 
@@ -37,30 +79,28 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -out=tfplan
 
-      - name: Create OPA Policy
-        run: |
-          mkdir -p policies
-          cat > policies/terraform_security.rego << 'EOL'
-          package terraform.security
-
-          deny[msg] {
-              input.resource_changes[_].change.after.file_permission == "0666"
-              msg := "Overly permissive file permissions (0666)"
-          }
-
-          deny[msg] {
-              contains(lower(input.resource_changes[_].change.after.content), "password123")
-              msg := "Weak password detected"
-          }
-          EOL
-
       - name: Terraform Show
         run: terraform show -json tfplan > tfplan.json
 
-      - name: Run OPA Scan
+      - name: Verbose OPA Scan
         run: |
           echo "Scanning Terraform plan:"
-          opa eval --format pretty \
+          opa eval \
+            --format pretty \
             -d tfplan.json \
             -d policies/terraform_security.rego \
-            "data.terraform.security.deny"
+            "data.terraform.security.deny" || true
+
+      - name: Fail on Security Violations
+        run: |
+          VIOLATIONS=$(opa eval \
+            --format json \
+            -d tfplan.json \
+            -d policies/terraform_security.rego \
+            "data.terraform.security.deny")
+          
+          if [ "$VIOLATIONS" != "[]" ]; then
+            echo "Security violations detected:"
+            echo "$VIOLATIONS"
+            exit 1
+          fi
