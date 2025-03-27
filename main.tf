@@ -25,9 +25,4 @@ resource "docker_container" "nginx" {
     # Security Violation 2: Exposing port to all interfaces (0.0.0.0)
     ip = "0.0.0.0"
   }
-
-  # Security Violation 3: No resource limits
-  resources {
-    # Missing CPU and memory limits
-  }
 }
