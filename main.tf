@@ -1,30 +1,39 @@
 terraform {
   required_providers {
-    docker = {
-      source  = "kreuzwerker/docker"
-      version = "~> 3.0"
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
     }
   }
 }
 
-provider "docker" {}
-
-resource "docker_image" "vulnerable_nginx" {
-  name = "nginx:1.16.0"  # Deliberately using an old, vulnerable image
-  keep_locally = false
+provider "aws" {
+  region = "us-west-2"
 }
 
-resource "docker_container" "insecure_container" {
-  name  = "insecure-nginx"
-  image = docker_image.vulnerable_nginx.image_id
+resource "aws_s3_bucket" "example" {
+  bucket = "my-high-risk-bucket"
+  
+  # Deliberate security violations
+  acl = "public-read"  # Explicitly making bucket public
+}
 
-  ports {
-    internal = 80
-    external = 8080
-    # Security risk: exposing to all interfaces
-    ip = "0.0.0.0"
+resource "aws_security_group" "example" {
+  name        = "allow-all"
+  description = "Allow all inbound and outbound traffic"
+
+  # Deliberately open security group
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Intentional security misconfigurations
-  privileged = true  # Extremely risky - gives full host access
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }
