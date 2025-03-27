@@ -1,30 +1,25 @@
 terraform {
   required_providers {
-    aws = {
-      source = "hashicorp/aws"
-      version = "5.92.0"
+    docker = {
+      source  = "kreuzwerker/docker"
+      version = "~> 3.0"
     }
   }
 }
 
-provider "aws" {
-  region = "us-west-2"
+provider "docker" {}
+
+resource "docker_image" "vulnerable_image" {
+  name = "nginx:1.16.0"  # Old, potentially vulnerable image
 }
 
-resource "aws_s3_bucket" "example" {
-  bucket = "my-tf-example-bucket"
-}
+resource "docker_container" "insecure_container" {
+  name  = "example-container"
+  image = docker_image.vulnerable_image.image_id
 
-resource "aws_s3_bucket_ownership_controls" "example" {
-  bucket = aws_s3_bucket.example.id
-  rule {
-    object_ownership = "BucketOwnerPreferred"
+  ports {
+    internal = 80
+    external = 8080
+    ip       = "0.0.0.0"  # Exposed to all interfaces
   }
-}
-
-resource "aws_s3_bucket_acl" "example" {
-  depends_on = [aws_s3_bucket_ownership_controls.example]
-
-  bucket = aws_s3_bucket.example.id
-  acl    = "public-read"
 }
