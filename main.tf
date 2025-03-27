@@ -2,19 +2,9 @@ terraform {
   required_providers {
     docker = {
       source = "kreuzwerker/docker"
-      version = "3.0.2"
+      version = "3.0.200"
     }
   }
-}
-
-variable "minio_root_user" {
-  type      = string
-  sensitive = true
-}
-
-variable "minio_root_password" {
-  type      = string
-  sensitive = true
 }
 
 resource "docker_container" "minio" {
@@ -25,8 +15,8 @@ resource "docker_container" "minio" {
     external = 9000
   }
   env = [
-    "MINIO_ROOT_USER=${var.minio_root_user}",
-    "MINIO_ROOT_PASSWORD=${var.minio_root_password}"
+     "MINIO_ROOT_USER=admin",
+     "MINIO_ROOT_PASSWORD=supersecret"
   ]
   command = ["server", "/data"]
 }
