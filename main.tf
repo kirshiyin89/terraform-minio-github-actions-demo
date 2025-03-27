@@ -7,6 +7,16 @@ terraform {
   }
 }
 
+variable "minio_root_user" {
+  type      = string
+  sensitive = true
+}
+
+variable "minio_root_password" {
+  type      = string
+  sensitive = true
+}
+
 resource "docker_container" "minio" {
   name  = "minio"
   image = "minio/minio"
@@ -15,8 +25,8 @@ resource "docker_container" "minio" {
     external = 9000
   }
   env = [
-    "MINIO_ROOT_USER=admin",
-    "MINIO_ROOT_PASSWORD=supersecret"
+    "MINIO_ROOT_USER=${var.minio_root_user}",
+    "MINIO_ROOT_PASSWORD=${var.minio_root_password}"
   ]
   command = ["server", "/data"]
 }
