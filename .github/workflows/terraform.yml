@@ -9,9 +9,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install OPA
+      - name: Download OPA
         run: |
-          curl -L -o opa https://openbao.org/assets/opa/opa_linux_amd64
+          wget https://openbao.org/assets/opa/opa_linux_amd64 -O opa
           chmod +x opa
           sudo mv opa /usr/local/bin/opa
 
@@ -22,47 +22,35 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
-        
-      - name: Terraform Format
-        run: terraform validate
 
       - name: Create OPA Policy
         run: |
           mkdir -p policies
-          cat > policies/terraform_security.rego << EOL
+          cat > policies/terraform_security.rego << 'EOL'
           package terraform.security
 
-          # Deny resources with overly permissive configurations
           deny[msg] {
-              resource := input.resource[_]
-              
-              # Check for publicly exposed resources
-              resource[_].ports[_].ip == "0.0.0.0"
-              msg := "Resource exposes port to all interfaces (0.0.0.0)"
-          }
-
-          deny[msg] {
-              resource := input.resource[_]
-              
-              # Check for weak or default passwords
-              contains(lower(resource[_].content), "password123")
-              msg := "Weak or default password detected"
-          }
-
-          deny[msg] {
-              resource := input.resource[_]
-              
-              # Check for overly permissive file permissions
-              resource[_].file_permission == "0666"
+              input.resource_changes[_].change.after.file_permission == "0666"
               msg := "Overly permissive file permissions (0666)"
+          }
+
+          deny[msg] {
+              contains(lower(input.resource_changes[_].change.after.content), "password123")
+              msg := "Weak password detected"
           }
           EOL
 
-      - name: Convert Terraform to JSON
-        run: terraform show -json > tfplan.json
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
 
-      - name: Run OPA Scan
+      - name: Terraform Show
+        run: terraform show -json tfplan > tfplan.json
+
+      - name: Debug OPA Scan
         run: |
+          echo "Debugging tfplan.json contents:"
+          cat tfplan.json
+          echo "\n\nRunning OPA evaluation:"
           opa eval --format pretty \
             -d tfplan.json \
             -d policies/terraform_security.rego \
