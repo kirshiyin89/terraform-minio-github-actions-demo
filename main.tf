@@ -1,25 +1,33 @@
 terraform {
   required_providers {
-    docker = {
-      source  = "kreuzwerker/docker"
-      version = "~> 3.0"
+    local = {
+      source = "hashicorp/local"
+      version = "~> 2.4"
     }
   }
 }
 
-provider "docker" {}
+resource "local_file" "security_risk_file" {
+  filename = "${path.module}/sensitive_config.txt"
+  content  = <<-EOF
+  # Deliberately exposed sensitive information
+  admin_password = "password123"
+  secret_key = "sk-very-secret-key"
+  database_connection_string = "postgresql://username:password@localhost:5432/database"
+  EOF
 
-resource "docker_image" "vulnerable_image" {
-  name = "nginx:1.16.0"  # Old, potentially vulnerable image
+  # Overly permissive file permissions
+  file_permission = "0666"  # Readable by everyone
 }
 
-resource "docker_container" "insecure_container" {
-  name  = "example-container"
-  image = docker_image.vulnerable_image.image_id
+resource "local_file" "another_risky_file" {
+  filename = "${path.module}/private_key.pem"
+  content  = <<-EOF
+  -----BEGIN RSA PRIVATE KEY-----
+  Fake Private Key Content - DO NOT USE IN REAL SCENARIOS
+  -----END RSA PRIVATE KEY-----
+  EOF
 
-  ports {
-    internal = 80
-    external = 8080
-    ip       = "0.0.0.0"  # Exposed to all interfaces
-  }
+  # Insecure file permissions
+  file_permission = "0644"  # Less restrictive than ideal
 }
