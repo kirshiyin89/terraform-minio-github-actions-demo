@@ -11,11 +11,11 @@ provider "aws" {
   region = "us-west-2"
 }
 
-resource "aws_s3_bucket" "example" {
-  bucket = "my-high-risk-bucket"
-  
-  # Deliberate security violations
-  acl = "public-read"  # Explicitly making bucket public
+resource "aws_s3_bucket_acl" "example" {
+  depends_on = [aws_s3_bucket_ownership_controls.example]
+
+  bucket = aws_s3_bucket.example.id
+  acl    = "public"
 }
 
 resource "aws_security_group" "example" {
