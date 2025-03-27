@@ -52,12 +52,11 @@ jobs:
         uses: bridgecrewio/checkov-action@master
         with:
           directory: /
-          file: plan.json # optional: provide the path for resource to be scanned. This will override the directory if both are provided.
+          file: doesnexist.json # optional: provide the path for resource to be scanned. This will override the directory if both are provided.
          # check: CKV_AWS_1 # optional: run only a specific check_id. can be comma separated list
         #  skip_check: CKV_AWS_2 # optional: skip a specific check_id. can be comma separated list
           quiet: true # optional: display only failed checks
           soft_fail: false # optional: do not return an error code if there are failed checks
-          skip_cve_package: CVE_2019_8331 # optional: skip a specific CVE package in SCA scans, can be comma separated list
 
       # Apply Terraform Changes (if plan passes validation)
       - name: Apply Terraform Changes
