@@ -19,6 +19,10 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.11.2
+          
+       # Initialize Terraform
+      - name: Initialize Terraform
+        run: terraform init
 
       # Terraform Syntax Validation
       - name: Validate Terraform Syntax
@@ -32,10 +36,6 @@ jobs:
       # Run Checkov to validate Terraform code for security and policy issues
       - name: Run Checkov Terraform Scan
         run: checkov -d . --skip-check CKV_AWS_23  # You can customize check skip as needed
-
-      # Initialize Terraform
-      - name: Initialize Terraform
-        run: terraform init
 
       # Plan Terraform Changes
       - name: Plan Terraform Changes
