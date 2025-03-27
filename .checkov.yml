@@ -1,3 +1,0 @@
-checkov:
-  run_check: "--enable-secret-scan-all-files"
-  output: json
